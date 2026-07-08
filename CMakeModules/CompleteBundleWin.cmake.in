@@ -41,6 +41,18 @@ if(EXISTS "${MPV_FALLBACK_DIR}/libmpv-2.dll")
   message(STATUS "Installed fallback libmpv")
 endif()
 
+# Install SDL2 DLL when SDL2 (game controller) support is compiled in.
+# SDL2_LIBRARY points at SDL2.lib; the VC devel package keeps SDL2.dll beside it.
+if(NOT "@SDL2_LIBRARY@" MATCHES "NOTFOUND" AND NOT "@SDL2_LIBRARY@" STREQUAL "")
+  get_filename_component(SDL2_LIB_DIR "@SDL2_LIBRARY@" DIRECTORY)
+  if(EXISTS "${SDL2_LIB_DIR}/SDL2.dll")
+    file(INSTALL "${SDL2_LIB_DIR}/SDL2.dll" DESTINATION "${CMAKE_INSTALL_PREFIX}")
+    message(STATUS "Installed SDL2.dll")
+  else()
+    message(WARNING "SDL2 enabled but SDL2.dll not found next to ${SDL2_LIB_DIR}")
+  endif()
+endif()
+
 if(@DO_ENABLE_ANGLE_DEP@)
   message(STATUS "Deploying separate ANGLE deps")
   file(INSTALL @DEPENDENCY_CACHE_DIR@/libEGL.dll @DEPENDENCY_CACHE_DIR@/libGLESv2.dll @DEPENDENCY_CACHE_DIR@/d3dcompiler_47.dll DESTINATION ${CMAKE_INSTALL_PREFIX})

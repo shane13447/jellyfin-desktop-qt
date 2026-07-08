@@ -1,4 +1,5 @@
 #include <QDebug>
+#include <QGuiApplication>
 #include "InputComponent.h"
 #include "settings/SettingsComponent.h"
 #include "system/SystemComponent.h"
@@ -162,6 +163,16 @@ void InputComponent::handleAction(const QString& action)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void InputComponent::remapInput(const QString &source, const QString &keycode, InputBase::InputkeyState keyState)
 {
+  // Focus gate: ignore game-controller (SDL) input while the application is in
+  // the background, so the same pad can drive games or other apps without also
+  // driving this player (SDL is opened with ALLOW_BACKGROUND_EVENTS and would
+  // otherwise react while unfocused). Only SDL is gated: keyboard input never
+  // arrives unfocused anyway, and CEC/LIRC remotes on HTPCs must keep working
+  // regardless of window focus.
+  if (source == QStringLiteral("SDL") &&
+      QGuiApplication::applicationState() != Qt::ApplicationActive)
+    return;
+
   qDebug() << "Input received: source:" << source << "keycode:" << keycode << ":" << keyState;
 
   emit receivedInput();

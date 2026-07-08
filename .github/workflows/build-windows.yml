@@ -5,6 +5,7 @@ env:
   # using older version due to severe memory leak
   # https://qt-project.atlassian.net/browse/QTBUG-141377
   QT_VERSION: "6.9.3"
+  SDL2_VERSION: "2.32.4"
 
 on:
   workflow_call:
@@ -67,6 +68,10 @@ jobs:
           mkdir build/mpv-fallback
           mv mpv-fallback-tmp/libmpv-2.dll build/mpv-fallback/
         fi
+        # SDL2 (game controller input) - devel package for MSVC
+        curl -L https://github.com/libsdl-org/SDL/releases/download/release-${{ env.SDL2_VERSION }}/SDL2-devel-${{ env.SDL2_VERSION }}-VC.zip > sdl2.zip
+        7z x sdl2.zip
+        mv SDL2-${{ env.SDL2_VERSION }} build/sdl2
       shell: bash
     - name: Bundle VC runtime DLLs
       run: |
@@ -83,7 +88,7 @@ jobs:
         call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\${{ matrix.vcvars }}"
         cd build
         set PATH=%PATH%;C:\Program Files (x86)\Inno Setup 6;%CD%
-        cmake -GNinja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=output -DQTROOT=%QT_ROOT_DIR% -DMPV_INCLUDE_DIR=mpv/include -DMPV_LIBRARY=mpv/libmpv-2.dll -DCHECK_FOR_UPDATES=ON -DUSE_STATIC_MPVQT=ON ..
+        cmake -GNinja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=output -DQTROOT=%QT_ROOT_DIR% -DMPV_INCLUDE_DIR=mpv/include -DMPV_LIBRARY=mpv/libmpv-2.dll -DSDL2_INCLUDE_DIR=%CD%\sdl2\include -DSDL2_LIBRARY=%CD%\sdl2\lib\x64\SDL2.lib -DCHECK_FOR_UPDATES=ON -DUSE_STATIC_MPVQT=ON ..
         lib /def:mpv\mpv.def /out:mpv\libmpv-2.dll.lib /MACHINE:${{ matrix.machine }}
         ninja
         ninja windows_all
