@@ -78,15 +78,23 @@ jobs:
       run: |
         mkdir deps
         mkdir deps/vcruntime
-        # Copy from VS 2022 Enterprise installation on runner
-        $vsRedist = Get-ChildItem "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Redist\MSVC\*\x64\Microsoft.VC143.CRT" | Select-Object -First 1
+        # Locate the VC redist CRT from whatever VS edition/version the runner has
+        $vsRedist = Get-ChildItem "C:\Program Files\Microsoft Visual Studio\*\*\VC\Redist\MSVC\*\x64\Microsoft.VC14*.CRT" -ErrorAction SilentlyContinue |
+          Select-Object -First 1
+        if (-not $vsRedist) {
+          $vsRedist = Get-ChildItem "C:\Program Files (x86)\Microsoft Visual Studio\*\*\VC\Redist\MSVC\*\x64\Microsoft.VC14*.CRT" -ErrorAction SilentlyContinue |
+            Select-Object -First 1
+        }
+        if (-not $vsRedist) { throw "VC redist CRT not found on runner" }
+        Write-Host "Using VC redist: $vsRedist"
         Copy-Item "$vsRedist\*.dll" deps/vcruntime/
         # Also grab VCRedist installer for optional system-wide install
         Invoke-WebRequest -Uri "https://aka.ms/vs/17/release/vc_redist.x64.exe" -OutFile deps/vc_redist.x64.exe
       shell: powershell
     - name: Build
       run: |
-        call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\${{ matrix.vcvars }}"
+        for /f "usebackq tokens=*" %%i in (`"C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do set "VSPATH=%%i"
+        call "%VSPATH%\VC\Auxiliary\Build\${{ matrix.vcvars }}"
         cd build
         set PATH=%PATH%;C:\Program Files (x86)\Inno Setup 6;%CD%
         cmake -GNinja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=output -DQTROOT=%QT_ROOT_DIR% -DMPV_INCLUDE_DIR=mpv/include -DMPV_LIBRARY=mpv/libmpv-2.dll -DSDL2_INCLUDE_DIR=%CD%\sdl2\include -DSDL2_LIBRARY=%CD%\sdl2\lib\x64\SDL2.lib -DCHECK_FOR_UPDATES=ON -DUSE_STATIC_MPVQT=ON ..
