@@ -1,3 +1,15 @@
+## About this fork
+This is a fork of the (now archived) Jellyfin Qt desktop client, kept alive for couch/controller use. Changes over upstream:
+- **SDL gamepad focus-gating** — controller input only registers while the window has focus (`src/input/InputComponent.cpp`)
+- **Keyboard remap fix** (`resources/inputmaps/keyboard.json`)
+- **CI/CMake build fixes** so the project builds again
+
+[View the full diff vs upstream](https://github.com/jellyfin-archive/jellyfin-desktop-qt/compare/master...shane13447:jellyfin-desktop-qt:master)
+
+Everything below is the original upstream README.
+
+---
+
 # Jellyfin Desktop
 > [!WARNING]
 > **Deprecated:** Development of this Qt-based desktop client has stopped in favor of a completely rewritten client built on SDL and CEF. The new client can be found at [jellyfin/jellyfin-desktop](https://github.com/jellyfin/jellyfin-desktop).
